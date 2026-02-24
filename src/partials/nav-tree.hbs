@@ -8,6 +8,7 @@
               {{#if (eq @root.page.component.name 'management-center')}}
               {{~#if (is-enterprise ./url)}} enterprise{{/if}}
               {{/if}}
+              {{~#if (is-experimental ./url)}} experimental{{/if}}
               {{~#if (is-beta ./url)}} beta{{/if}}
             " href="
             {{~#if (eq ./urlType 'internal')}}{{{relativize ./url}}}
