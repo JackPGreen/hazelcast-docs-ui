@@ -28,17 +28,12 @@
 
 {{#if site.keys.aiSearchId}}
   <!-- Kapa snippet -->
-  <script>
-    // Preinitialization stub
-    (function () {
-      if (window.Kapa) return;
-      const stub = function () { stub.c(arguments); };
-      stub.q = [];
-      stub.c = function (args) { stub.q.push(args); };
-      window.Kapa = stub;
-    })();
-  </script>
+  <!--
+    This script is a config placeholder. The actual widget is loaded using this config to toggle cookies based on consent state.
+  -->
   <script
+    type="text/plain"
+    id="kapa-widget-config"
     src="https://widget.kapa.ai/kapa-widget.bundle.js"
     data-button-hide="true"
     data-mcp-enabled="true"
@@ -65,9 +60,59 @@
     data-search-mode-enabled="false"
     data-search-display-num-results="10"
     data-search-source-group-order='["docs.hazelcast.com", "Java API Docs", "C# API Docs", "Go Client Docs"]'
-    data-user-analytics-cookie-enabled="false"
-    defer
   ></script>
+  <script>
+    (function () {
+      const KAPA_COOKIE = 'kapa_web_id';
+
+      function analyticsGranted() {
+        return /(?:^|;\s*)cookies-analytics=true(?:;|$)/.test(document.cookie);
+      }
+
+      function deleteKapaCookie() {
+        if (document.cookie.indexOf(KAPA_COOKIE + '=') === -1) return;
+        const host = location.hostname;
+        const domains = ['', host];
+        const parts = host.split('.');
+        for (let i = 0; i < parts.length - 1; i++) domains.push('.' + parts.slice(i).join('.'));
+        for (let d = 0; d < domains.length; d++) {
+          document.cookie = KAPA_COOKIE + '=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/'
+            + (domains[d] ? '; domain=' + domains[d] : '');
+        }
+      }
+
+      if (!analyticsGranted()) deleteKapaCookie();
+      const s = document.createElement('script');
+      s.async = true;
+      const config = document.getElementById('kapa-widget-config');
+      if (config) {
+        for (let i = 0; i < config.attributes.length; i++) {
+          const a = config.attributes[i];
+          if (a.name === 'type' || a.name === 'id') continue;
+          s.setAttribute(a.name, a.value);
+        }
+      }
+      s.setAttribute('data-user-analytics-cookie-enabled', analyticsGranted() ? 'true' : 'false');
+      document.head.appendChild(s);
+
+      function watchConsent() {
+        const dl = window.dataLayer = window.dataLayer || [];
+        const push = dl.push;
+        dl.push = function () {
+          const r = push.apply(this, arguments);
+          try {
+            for (let i = 0; i < arguments.length; i++) {
+              const e = arguments[i];
+              if (e && e.event === 'enzuzo_consent_update' && !analyticsGranted()) deleteKapaCookie();
+            }
+          } catch (err) { /* no-op */ }
+          return r;
+        };
+      }
+      if (document.readyState === 'complete') watchConsent();
+      else window.addEventListener('load', watchConsent);
+    })();
+  </script>
   <!-- End Kapa snippet -->
 {{/if}}
 
